@@ -180,10 +180,12 @@ function setup(msg){
     ${msg?`<p class="err">${esc(msg)}</p>`:''}
     <label for="tok">קוד גישה (מתחיל ב-github_pat_)</label>
     <input id="tok" type="password" autocomplete="off" value="">
+    <button class="linkbtn" id="paste" type="button" style="margin-top:8px">הדבקה מהלוח</button>
     <label for="rep">מאגר</label>
     <input id="rep" value="${esc(S.repo)}">
     <div class="actions" style="grid-template-columns:1fr"><button class="btn ok" id="save">התחברי</button></div>
   </div>`;
+  $('#paste').onclick=async()=>{try{$('#tok').value=(await navigator.clipboard.readText()).trim()}catch(e){$('#tok').focus()}};
   $('#save').onclick=()=>{const t=$('#tok').value.trim().replace(/^["']|["']$/g,'');const r=$('#rep').value.trim();
     if(!t){$('#tok').focus();return}S.token=t;S.repo=r;store.set('mol_token',t);store.set('mol_repo',r);load()};
 }
@@ -260,19 +262,23 @@ async function loadImg(url){
 }
 function status(){return `<div class="panel" id="status"><h3>מה קרה עם האישורים</h3><p class="sub">אחרי השליחה יונתן מפרסם תוך 2–3 דקות.</p><button class="linkbtn" id="chk">בדקי מה פורסם</button><div id="stbody"></div></div>`}
 function growthPanel(){if(!S.growth.length)return '';return `<details class="panel"><summary>לעקוב ולהגיב היום (${S.growth.length})</summary><ul class="grow">${S.growth.map(g=>`<li><a href="${esc(g.url)}" target="_blank" rel="noopener">${esc(g.label)}</a></li>`).join('')}</ul></details>`}
-function footer(){return `<p class="note" style="margin-top:22px">${S.issue?`<a href="${esc(S.issue.html_url)}" target="_blank" rel="noopener">המשימה המלאה ב-GitHub</a> · `:''}<button class="linkbtn" id="reload">רענון</button> · <button class="linkbtn" id="phone">התקנה בטלפון</button> · <button class="linkbtn" id="reset">החלפת קוד</button></p>`}
-function bindFooter(){$('#reload').onclick=load;$('#reset').onclick=()=>{store.del('mol_token');S.token='';setup()};$('#phone').onclick=phone}
+function footer(){return `<p class="note" style="margin-top:22px">${S.issue?`<a href="${esc(S.issue.html_url)}" target="_blank" rel="noopener">המשימה המלאה ב-GitHub</a> · `:''}<button class="linkbtn" id="reload">רענון</button> · <button class="linkbtn" id="phone">התקנה בטלפון</button> · <button class="linkbtn" id="cptok">העתקת הקוד לאפליקציה</button> · <button class="linkbtn" id="reset">החלפת קוד</button></p>`}
+function bindFooter(){$('#reload').onclick=load;$('#reset').onclick=()=>{store.del('mol_token');S.token='';setup()};$('#phone').onclick=phone;
+  $('#cptok').onclick=async()=>{try{await navigator.clipboard.writeText(S.token);toast('הקוד הועתק. פתחי את "אישורים" ממסך הבית והדביקי אותו שם.')}catch(e){toast('לא הצלחתי להעתיק. נסי שוב.')}}}
 function phone(){
   const url=APP_URL+'#t='+encodeURIComponent(S.token)+'&r='+encodeURIComponent(S.repo);
   const m=document.createElement('div');m.className='modal';
-  m.innerHTML=`<div class="box" role="dialog" aria-label="התקנה בטלפון"><h2>התקנה בטלפון</h2>
+  m.innerHTML=`<div class="box" role="dialog" aria-label="התקנה בטלפון"><h2>התקנה בטלפון ובמחשב</h2>
   <p>סרקי את הקוד במצלמה של הטלפון. האפליקציה תיפתח מחוברת, בלי להקליד כלום.</p><div id="qr"></div>
   <p class="note">בטלפון: בתפריט של Chrome (⋮) בחרי "התקנת האפליקציה" או "הוספה למסך הבית". באייפון: שיתוף ← "הוספה למסך הבית".</p>
   <p class="note">הקוד מכיל את מפתח הגישה. אל תצלמי ואל תשלחי אותו לאף אחד.</p>
-  <button class="copy" id="closeqr">סגירה</button></div>`;
+  <p style="margin-top:14px"><b>להתקנה במחשב:</b> לחצי על הכפתור. האפליקציה תיפתח מחוברת, ואז בשורת הכתובת למעלה לחצי על סמל ההתקנה (מסך עם חץ) ← "התקנה".</p>
+  <button class="copy" id="openpc" style="background:var(--blue)">פתיחה במחשב</button>
+  <button class="copy" id="closeqr" style="background:transparent;color:var(--ink);border:1px solid var(--line)">סגירה</button></div>`;
   document.body.appendChild(m);
   try{new QRCode(document.getElementById('qr'),{text:url,width:220,height:220,correctLevel:QRCode.CorrectLevel.M})}
   catch(e){document.getElementById('qr').textContent='לא הצלחתי ליצור קוד. בדקי חיבור לאינטרנט ונסי שוב.'}
+  $('#openpc').onclick=()=>window.open(url,'_blank','noopener');
   const close=()=>m.remove();$('#closeqr').onclick=close;m.onclick=e=>{if(e.target===m)close()};
 }
 function bindCommon(){
