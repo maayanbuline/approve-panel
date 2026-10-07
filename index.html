@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>אישורים</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1D4F91">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="אישורים">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Frank+Ruhl+Libre:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F6F3; --sheet:#FFFFFF; --ink:#18252C; --muted:#5E6A70; --line:#D9DFD8;
+  --blue:#1D4F91; --blue-ink:#FFFFFF; --field:#3F6A2E; --field-soft:#E5EEDD; --warn:#9A3B1F;
+  --ui:"Assistant",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --read:"Frank Ruhl Libre","Times New Roman",Georgia,serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#11181C; --sheet:#182227; --ink:#E7ECEA; --muted:#9AA6AB; --line:#2A363C;
+  --blue:#5E8FD6; --blue-ink:#0E1A26; --field:#8DB86F; --field-soft:#22311D; --warn:#E39072;}}
+:root[data-theme="dark"]{--paper:#11181C; --sheet:#182227; --ink:#E7ECEA; --muted:#9AA6AB; --line:#2A363C;
+  --blue:#5E8FD6; --blue-ink:#0E1A26; --field:#8DB86F; --field-soft:#22311D; --warn:#E39072;}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--ui);font-size:17px;line-height:1.5}
+button,input{font:inherit;color:inherit}
+a{color:var(--blue)}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.wrap{max-width:680px;margin:0 auto;padding:20px 18px 140px}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:14px}
+h1{font-family:var(--read);font-weight:500;font-size:30px;margin:0;line-height:1.2}
+.sub{color:var(--muted);font-size:15px}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 18px}
+.filters button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 14px;cursor:pointer;font-size:15px;color:var(--muted)}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:22px 22px 18px}
+.meta{font-size:15px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.meta b{color:var(--ink);font-weight:600}
+.when{color:var(--blue);font-weight:600}
+.about{margin:16px 0 0;padding:12px 14px;border-inline-start:3px solid var(--line);color:var(--muted);font-size:16px;white-space:pre-wrap}
+.about small{display:block;font-size:13px;margin-bottom:4px}
+.read{font-family:var(--read);font-size:23px;line-height:1.55;margin:6px 0 6px;white-space:pre-wrap}
+.what{font-family:var(--read);font-size:20px;margin-top:10px}
+.label{margin-top:18px;font-size:14px;font-weight:700;color:var(--field)}
+details{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+summary{cursor:pointer;color:var(--muted);font-size:15px}
+.orig{white-space:pre-wrap;font-size:16px;margin:10px 0 0;unicode-bidi:plaintext}
+.links{margin-top:14px;font-size:15px}
+.img{width:100%;border-radius:10px;margin-top:14px;background:var(--paper);min-height:120px;object-fit:cover}
+.actions{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:16px}
+.btn{border:0;border-radius:12px;padding:15px 10px;font-weight:700;font-size:18px;cursor:pointer}
+.skip{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.ok{background:var(--field);color:#fff}
+.ok.on{background:var(--field-soft);color:var(--field);border:1px solid var(--field)}
+.back{background:none;border:0;color:var(--muted);cursor:pointer;font-size:15px;margin-top:10px;padding:4px 0}
+.bar{position:fixed;inset-inline:0;bottom:0;background:var(--sheet);border-top:1px solid var(--line);
+  padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px))}
+.bar .in{max-width:680px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.send{background:var(--blue);color:var(--blue-ink);border:0;border-radius:12px;padding:13px 20px;font-weight:700;font-size:17px;cursor:pointer}
+.send:disabled{opacity:.35;cursor:default}
+.done{text-align:center;padding:40px 10px}
+.done h2{font-family:var(--read);font-weight:500;font-size:26px;margin:0 0 8px}
+.panel{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-top:18px;text-align:start}
+.panel h3{margin:0 0 8px;font-size:17px}
+.panel p{margin:4px 0}
+pre{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;font-family:var(--ui);font-size:14px;max-height:180px;overflow:auto;direction:rtl}
+.copy{background:var(--ink);color:var(--paper);border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;margin-top:8px}
+.setup label{display:block;font-weight:600;margin:14px 0 6px}
+.setup input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--sheet);direction:ltr}
+.note{color:var(--muted);font-size:14px}
+.err{color:var(--warn);font-weight:600}
+.toast{position:fixed;inset-inline:18px;bottom:96px;margin:0 auto;max-width:520px;background:var(--ink);color:var(--paper);padding:12px 16px;border-radius:12px;text-align:center;opacity:0;transition:opacity .25s}
+.toast.show{opacity:1}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:18px;z-index:9}
+.modal .box{background:var(--sheet);border-radius:16px;padding:22px;max-width:380px;width:100%;text-align:center}
+.modal h2{font-family:var(--read);font-weight:500;margin:0 0 8px;font-size:24px}
+#qr{display:flex;justify-content:center;margin:16px 0;background:#fff;padding:12px;border-radius:10px}
+.linkbtn{background:none;border:0;color:var(--blue);cursor:pointer;padding:0;font-size:15px;text-decoration:underline}
+ul.grow{padding-inline-start:18px;margin:6px 0}
+@media (max-width:480px){.read{font-size:21px} h1{font-size:26px} .card{padding:18px 16px 14px}}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><p class="sub">טוען…</p></div>
+<div class="bar" id="bar" hidden><div class="in">
+  <span id="picked">לא נבחר עדיין</span>
+  <button class="send" id="send" disabled>שלחי ליונתן</button>
+</div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+// Parses the Daily approval issue body produced by moledet_presence/github_issues.py
+function sectionType(h) {
+  if (/פוסטים בעמודי|Posts on Moledet/.test(h)) return 'post';
+  if (/מענה לתגובות|Replies to comments/.test(h)) return 'own';
+  if (/דיונים אצל אחרים|Other people/.test(h)) return 'discussion';
+  if (/קבוצות פייסבוק|Facebook groups/.test(h)) return 'group';
+  if (/תמונות חדשות|New photos/.test(h)) return 'media';
+  if (/לעקוב ולהגיב|Follow and comment/.test(h)) return 'growth';
+  return 'other';
+}
+function parseIssue(body) {
+  body = (body || '').replace(/\r/g, '');
+  const cut = body.search(/^### (הטקסטים המלאים|Full texts)\s*$/m);
+  const head = cut >= 0 ? body.slice(0, cut) : body;
+  const tail = cut >= 0 ? body.slice(cut) : '';
+  const items = [], byId = {}, growth = [];
+  let sec = 'other';
+  for (const line of head.split('\n')) {
+    const h = line.match(/^###\s+(.*)$/);
+    if (h) { sec = sectionType(h[1]); continue; }
+    const m = line.match(/^\s*[-*] \[( |x|X)\] \[([0-9a-f]{10})\] (.*?)(?: — (.*))?$/);
+    if (m) {
+      const parts = m[3].split(' · ');
+      const it = { id: m[2], checked: m[1] !== ' ', type: sec, kind: parts[0] || '', platform: (parts[1] || '').replace(/\s*\(.*\)\s*$/, ''),
+        community: parts.slice(2).join(' · '), headline: (m[4] || '').trim(), text: '', translation: '', original: '', target: '', image: '', sentBy: '' };
+      items.push(it); byId[it.id] = it; continue;
+    }
+    if (sec === 'growth') {
+      const g = line.match(/^- (.*?) – (https?:\/\/\S+)/);
+      if (g) growth.push({ label: g[1], url: g[2] });
+    }
+  }
+  const re = /^\*\*\[([0-9a-f]{10})\][^\n]*\*\*\s*$/gm;
+  const marks = []; let mm;
+  while ((mm = re.exec(tail))) marks.push({ id: mm[1], start: mm.index, end: re.lastIndex });
+  marks.forEach((mk, i) => {
+    const it = byId[mk.id]; if (!it) return;
+    const chunk = tail.slice(mk.end, i + 1 < marks.length ? marks[i + 1].start : tail.length);
+    let mode = null; const buf = { text: [], original: [], translation: [] };
+    for (const ln of chunk.split('\n')) {
+      if (/^(יעד|Target):\s*/.test(ln)) { it.target = ln.replace(/^(יעד|Target):\s*/, '').trim(); continue; }
+      const img = ln.match(/!\[[^\]]*\]\(([^)\s]+)\)/); if (img) { it.image = img[1].replace(/\?raw=true$/, ''); continue; }
+      if (/^(נשלחה על ידי|Sent by):/.test(ln)) { it.sentBy = ln.split(':').slice(1).join(':').trim(); continue; }
+      if (/^_(התגובה המקורית|Original comment):_/.test(ln)) { mode = 'original'; continue; }
+      if (/^_(תרגום|Translation):_/.test(ln)) { mode = 'translation'; continue; }
+      if (/^>/.test(ln)) { buf[mode || 'text'].push(ln.replace(/^> ?/, '')); continue; }
+      if (ln.trim() === '' && mode === 'original' && buf.original.length) mode = null;
+    }
+    it.text = buf.text.join('\n').trim(); it.original = buf.original.join('\n').trim(); it.translation = buf.translation.join('\n').trim();
+  });
+  return { items, growth };
+}
+
+
+const API='https://api.github.com';
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+(function(){const h=new URLSearchParams(location.hash.slice(1));const t=h.get('t');
+  if(t){try{localStorage.setItem('mol_token',t);if(h.get('r'))localStorage.setItem('mol_repo',h.get('r'))}catch(e){}
+  history.replaceState(null,'',location.pathname+location.search)}})();
+const APP_URL='https://maayanbuline.github.io/approve-panel/';
+const S={repo:store.get('mol_repo')||'maayanbuline/moledet-agent',token:store.get('mol_token')||'',issue:null,items:[],growth:[],queue:[],pos:0,filter:'all',picked:new Set(),skipped:new Set()};
+const LABEL={all:'הכול',post:'פוסטים',own:'מענה לגולשים',discussion:'דיונים',group:'קבוצות',media:'תמונות',other:'אחר'};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),3500)}
+async function gh(path,opt={}){
+  const r=await fetch(API+path,{...opt,headers:{'Authorization':'Bearer '+S.token,'Accept':'application/vnd.github+json',...(opt.headers||{})}});
+  if(r.status===401) throw new Error('הקוד לא תקין או שפג תוקפו. לחצי "החלפת קוד" והדביקי קוד חדש.');
+  if(r.status===404) throw new Error('לא נמצא המאגר '+S.repo+'. בדקי שלקוד יש גישה אליו.');
+  if(!r.ok) throw new Error('GitHub החזיר שגיאה '+r.status);
+  return r;
+}
+function setup(msg){
+  $('#bar').hidden=true;
+  $('#app').innerHTML=`<header><h1>חיבור לאישורים</h1></header>
+  <div class="card setup">
+    <p>פעם אחת בלבד: הדביקי כאן את קוד הגישה מ-GitHub. הוא נשמר רק בדפדפן הזה.</p>
+    ${msg?`<p class="err">${esc(msg)}</p>`:''}
+    <label for="tok">קוד גישה (מתחיל ב-github_pat_)</label>
+    <input id="tok" type="password" autocomplete="off" value="">
+    <label for="rep">מאגר</label>
+    <input id="rep" value="${esc(S.repo)}">
+    <div class="actions" style="grid-template-columns:1fr"><button class="btn ok" id="save">התחברי</button></div>
+  </div>`;
+  $('#save').onclick=()=>{const t=$('#tok').value.trim().replace(/^["']|["']$/g,'');const r=$('#rep').value.trim();
+    if(!t){$('#tok').focus();return}S.token=t;S.repo=r;store.set('mol_token',t);store.set('mol_repo',r);load()};
+}
+async function load(){
+  if(!S.token) return setup();
+  $('#app').innerHTML='<p class="sub">טוען את האישורים של היום…</p>';
+  try{
+    const r=await gh(`/repos/${S.repo}/issues?state=open&per_page=30&sort=created&direction=desc`);
+    const list=(await r.json()).filter(i=>!i.pull_request&&/^Daily approval/.test(i.title));
+    if(!list.length){S.issue=null;return render()}
+    S.issue=list[0];
+    const p=parseIssue(S.issue.body);S.items=p.items;S.growth=p.growth;
+    S.picked=new Set();S.skipped=new Set(JSON.parse(store.get('mol_skip_'+S.issue.number)||'[]'));
+    buildQueue();render();
+  }catch(e){setup(e.message)}
+}
+function buildQueue(){
+  S.queue=S.items.filter(i=>!i.checked&&!S.skipped.has(i.id)&&(S.filter==='all'||i.type===S.filter));
+  if(S.pos>=S.queue.length) S.pos=Math.max(0,S.queue.length-1);
+}
+function counts(){const c={all:0};S.items.filter(i=>!i.checked&&!S.skipped.has(i.id)).forEach(i=>{c.all++;c[i.type]=(c[i.type]||0)+1});return c}
+function sched(it){const m=(it.headline||'').match(/PUBLISH ON (\d{4})-(\d{2})-(\d{2})/);return m?`מתוזמן ל-${+m[3]}.${+m[2]}`:''}
+function cleanHead(h){return String(h||'').replace(/^PUBLISH ON \d{4}-\d{2}-\d{2}\s*[-–]?\s*/,'').replace(/^(Reply|Réponse|Group post|Question aux membres)\s*[:–-]?\s*/i,'')}
+function what(it){
+  return {post:'פוסט חדש בעמוד של מולדת',own:'מישהו הגיב אצלנו, ויונתן עונה',discussion:'יונתן מגיב בפוסט של מישהו אחר',
+    group:'פוסט של מולדת בקבוצת פייסבוק',media:'תמונה חדשה לספרייה',other:'פריט'}[it.type]||'';
+}
+function where(it){
+  const k=it.kind||LABEL[it.type]||'';const p=it.platform?` ב${it.platform}`:'';
+  return `<b>${esc(k)}${esc(p)}</b>${it.community?`, ${esc(it.community)}`:''}`;
+}
+function render(){
+  const app=$('#app');
+  const date=S.issue?(S.issue.title.match(/\d{4}-\d{2}-\d{2}/)||[''])[0].split('-').reverse().join('.'):'';
+  if(!S.issue){$('#bar').hidden=true;app.innerHTML=`<header><h1>אין אישורים פתוחים</h1></header><p class="sub">יונתן יכין את הרשימה הבאה בבוקר.</p>${footer()}`;bindFooter();return}
+  const c=counts();
+  const filters=Object.keys(LABEL).filter(k=>k==='all'||c[k]).map(k=>`<button data-f="${k}" aria-pressed="${S.filter===k}">${LABEL[k]} ${c[k]||0}</button>`).join('');
+  $('#bar').hidden=false;updateBar();
+  if(!S.queue.length){
+    app.innerHTML=`<header><h1>אישורים ל-${esc(date)}</h1></header><div class="filters">${filters}</div>
+    <div class="done"><h2>${S.picked.size?'סיימת לעבור על הרשימה':'אין כאן עוד פריטים'}</h2>
+    <p class="sub">${S.picked.size?`בחרת ${S.picked.size}. לחצי "שלחי ליונתן" למטה.`:'אפשר לבחור קטגוריה אחרת למעלה, או לבדוק מה פורסם.'}</p></div>${status()}${growthPanel()}${footer()}`;
+    bindCommon();return;
+  }
+  const it=S.queue[S.pos];const on=S.picked.has(it.id);
+  const readText=it.translation||it.text||'';
+  const link=(it.type!=='discussion'&&it.type!=='group'&&/^https?:/.test(it.target))?`<div class="links"><a href="${esc(it.target)}" target="_blank" rel="noopener">פתחי את הפוסט המקורי</a></div>`:'';
+  app.innerHTML=`<header><h1>אישורים ל-${esc(date)}</h1><span class="sub">${S.pos+1} מתוך ${S.queue.length}</span></header>
+  <div class="filters">${filters}</div>
+  <article class="card" aria-live="polite">
+    <div class="meta"><span>${where(it)}</span>${sched(it)?`<span class="when">${sched(it)}</span>`:''}</div>
+    <div class="what">${what(it)}</div>
+    ${it.original?`<div class="about"><small>${it.type==='own'?'מה כתבו לנו':'הפוסט המקורי'}</small>${esc(it.original)}</div>`:''}
+    ${it.type==='discussion'||it.type==='group'?`<div class="about"><small>${it.type==='group'?'הקבוצה':'הפוסט שיונתן מגיב אליו'}</small>${esc(cleanHead(it.headline))||'—'}${/^https?:/.test(it.target)?`<br><a href="${esc(it.target)}" target="_blank" rel="noopener">${it.type==='group'?'פתחי את הקבוצה':'פתחי לקרוא את הפוסט המלא'}</a>`:''}</div>`:''}
+    ${it.type!=='media'?`<div class="label">${it.type==='post'?'הפוסט של יונתן':it.type==='group'?'מה יונתן יפרסם בקבוצה':'התגובה של יונתן'}</div>`:''}
+    ${it.type==='media'?`<img class="img" id="img" alt="תמונה שנשלחה לספרייה">${it.sentBy?`<p class="sub">נשלחה על ידי ${esc(it.sentBy)}</p>`:''}`:`<div class="read">${esc(readText)}</div>`}
+    ${it.translation&&it.text?`<details><summary>הטקסט שיפורסם, בשפת הקהילה</summary><div class="orig" dir="auto">${esc(it.text)}</div></details>`:''}
+    ${link}
+    <div class="actions"><button class="btn skip" id="skip">דלגי</button><button class="btn ok ${on?'on':''}" id="ok">${on?'✓ נבחר לאישור':'אשרי'}</button></div>
+    ${S.pos>0?'<button class="back" id="prev">חזרה לקודם</button>':''}
+  </article>${status()}${footer()}`;
+  bindCommon();
+  $('#ok').onclick=()=>{if(S.picked.has(it.id))S.picked.delete(it.id);else{S.picked.add(it.id);next()};updateBar();if(S.picked.has(it.id)===false)render()};
+  $('#skip').onclick=()=>{S.skipped.add(it.id);store.set('mol_skip_'+S.issue.number,JSON.stringify([...S.skipped]));buildQueue();render()};
+  if($('#prev'))$('#prev').onclick=()=>{S.pos=Math.max(0,S.pos-1);render()};
+  if(it.type==='media'&&it.image)loadImg(it.image);
+}
+function next(){S.pos++;if(S.pos>=S.queue.length){S.queue=[];}render()}
+function updateBar(){const n=S.picked.size;$('#picked').textContent=n?`נבחרו ${n} לאישור`:'לא נבחר עדיין';$('#send').disabled=!n}
+async function loadImg(url){
+  const m=url.match(/github\.com\/[^/]+\/[^/]+\/blob\/[^/]+\/(.+)$/);if(!m)return;
+  try{const r=await gh(`/repos/${S.repo}/contents/${m[1]}`,{headers:{'Accept':'application/vnd.github.raw'}});
+    const b=await r.blob();const img=$('#img');if(img)img.src=URL.createObjectURL(b)}catch(e){}
+}
+function status(){return `<div class="panel" id="status"><h3>מה קרה עם האישורים</h3><p class="sub">אחרי השליחה יונתן מפרסם תוך 2–3 דקות.</p><button class="linkbtn" id="chk">בדקי מה פורסם</button><div id="stbody"></div></div>`}
+function growthPanel(){if(!S.growth.length)return '';return `<details class="panel"><summary>לעקוב ולהגיב היום (${S.growth.length})</summary><ul class="grow">${S.growth.map(g=>`<li><a href="${esc(g.url)}" target="_blank" rel="noopener">${esc(g.label)}</a></li>`).join('')}</ul></details>`}
+function footer(){return `<p class="note" style="margin-top:22px">${S.issue?`<a href="${esc(S.issue.html_url)}" target="_blank" rel="noopener">המשימה המלאה ב-GitHub</a> · `:''}<button class="linkbtn" id="reload">רענון</button> · <button class="linkbtn" id="phone">התקנה בטלפון</button> · <button class="linkbtn" id="reset">החלפת קוד</button></p>`}
+function bindFooter(){$('#reload').onclick=load;$('#reset').onclick=()=>{store.del('mol_token');S.token='';setup()};$('#phone').onclick=phone}
+function phone(){
+  const url=APP_URL+'#t='+encodeURIComponent(S.token)+'&r='+encodeURIComponent(S.repo);
+  const m=document.createElement('div');m.className='modal';
+  m.innerHTML=`<div class="box" role="dialog" aria-label="התקנה בטלפון"><h2>התקנה בטלפון</h2>
+  <p>סרקי את הקוד במצלמה של הטלפון. האפליקציה תיפתח מחוברת, בלי להקליד כלום.</p><div id="qr"></div>
+  <p class="note">בטלפון: בתפריט של Chrome (⋮) בחרי "התקנת האפליקציה" או "הוספה למסך הבית". באייפון: שיתוף ← "הוספה למסך הבית".</p>
+  <p class="note">הקוד מכיל את מפתח הגישה. אל תצלמי ואל תשלחי אותו לאף אחד.</p>
+  <button class="copy" id="closeqr">סגירה</button></div>`;
+  document.body.appendChild(m);
+  try{new QRCode(document.getElementById('qr'),{text:url,width:220,height:220,correctLevel:QRCode.CorrectLevel.M})}
+  catch(e){document.getElementById('qr').textContent='לא הצלחתי ליצור קוד. בדקי חיבור לאינטרנט ונסי שוב.'}
+  const close=()=>m.remove();$('#closeqr').onclick=close;m.onclick=e=>{if(e.target===m)close()};
+}
+function bindCommon(){
+  bindFooter();
+  document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;S.pos=0;buildQueue();render()});
+  if($('#chk'))$('#chk').onclick=checkStatus;
+}
+async function checkStatus(){
+  const box=$('#stbody');box.innerHTML='<p class="sub">בודקת…</p>';
+  try{
+    const r=await gh(`/repos/${S.repo}/issues/${S.issue.number}/comments?per_page=100`);
+    const cs=(await r.json()).filter(c=>/bot/.test(c.user&&c.user.type||'')||/github-actions/.test(c.user&&c.user.login||''));
+    if(!cs.length){box.innerHTML='<p class="sub">עוד אין עדכון. נסי שוב בעוד דקה.</p>';return}
+    const body=cs[cs.length-1].body||'';
+    const code=(body.match(/```\n?([\s\S]*?)```/)||[])[1];
+    const text=body.replace(/```[\s\S]*?```/g,'').replace(/\n{3,}/g,'\n\n').trim();
+    const linked=esc(text).replace(/(https?:\/\/\S+)/g,'<a href="$1" target="_blank" rel="noopener">קישור</a>');
+    box.innerHTML=`<div style="white-space:pre-wrap;margin-top:8px">${linked}</div>${code?`<p style="margin-top:12px"><b>לפרסום בפייסבוק ובאינסטגרם של אחרים:</b> העתיקי והדביקי בחלונית של Claude בכרום.</p><pre id="cp">${esc(code.trim())}</pre><button class="copy" id="cpb">העתקה</button>`:''}`;
+    if(code)$('#cpb').onclick=async()=>{try{await navigator.clipboard.writeText(code.trim());toast('הועתק. עכשיו הדביקי ב-Claude בכרום.')}catch(e){toast('לא הצלחתי להעתיק. סמני את הטקסט והעתיקי ידנית.')}};
+  }catch(e){box.innerHTML=`<p class="err">${esc(e.message)}</p>`}
+}
+$('#send').onclick=async()=>{
+  const ids=[...S.picked];if(!ids.length||!S.issue)return;
+  const b=$('#send');b.disabled=true;b.textContent='שולחת…';
+  try{
+    const r=await gh(`/repos/${S.repo}/issues/${S.issue.number}`);const iss=await r.json();let body=iss.body||'';
+    ids.forEach(id=>{body=body.replace(new RegExp('^(\\s*[-*]) \\[ \\] \\['+id+'\\]','m'),'$1 [x] ['+id+']')});
+    await gh(`/repos/${S.repo}/issues/${S.issue.number}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})});
+    toast(`נשלח. יונתן מפרסם ${ids.length} פריטים בדקות הקרובות.`);
+    S.issue.body=body;S.items=parseIssue(body).items;S.picked=new Set();S.pos=0;buildQueue();render();
+    setTimeout(()=>{if($('#chk'))checkStatus()},150000);
+  }catch(e){toast(e.message)}
+  finally{b.textContent='שלחי ליונתן';updateBar()}
+};
+if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+load();
+</script>
+</body>
+</html>
