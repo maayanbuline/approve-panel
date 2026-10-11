@@ -86,6 +86,37 @@ pre{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);bo
 .modal .box{background:var(--sheet);border-radius:16px;padding:22px;max-width:380px;width:100%;text-align:center}
 .modal h2{font-family:var(--read);font-weight:500;margin:0 0 8px;font-size:24px}
 #qr{display:flex;justify-content:center;margin:16px 0;background:#fff;padding:12px;border-radius:10px}
+.tabs{max-width:680px;margin:0 auto;padding:14px 18px 0;display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:8px 14px 10px;font-size:17px;font-weight:600;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--blue)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:16px}
+.kpi{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:14px 14px 8px;position:relative}
+.kpi .k-label{font-size:14px;color:var(--muted)}
+.kpi .k-num{font-family:var(--read);font-size:34px;line-height:1.1;margin-top:4px}
+.kpi .k-delta{font-size:14px;color:var(--muted);margin-top:2px}
+.kpi .k-delta b{color:var(--ink)}
+.spark{width:100%;height:46px;display:block;margin-top:6px;overflow:visible}
+.spark .ln{fill:none;stroke:var(--blue);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.spark .dot{fill:var(--blue);stroke:var(--sheet);stroke-width:2}
+.spark .hit{fill:transparent;cursor:crosshair}
+.spark .cross{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 2}
+.tip{position:absolute;top:6px;inset-inline-end:10px;background:var(--ink);color:var(--paper);font-size:13px;padding:4px 8px;border-radius:8px;pointer-events:none;opacity:0}
+.tip.show{opacity:1}
+.learn{background:var(--field-soft);border:1px solid var(--field);border-radius:14px;padding:16px 18px;margin-top:18px}
+.learn h3{margin:0 0 6px;font-size:18px;color:var(--field)}
+.learn ul{margin:8px 0 0;padding-inline-start:20px}
+.learn li{margin:4px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chips span{font-size:14px;border-radius:999px;padding:3px 10px;background:var(--sheet);border:1px solid var(--line)}
+.posts{list-style:none;padding:0;margin:8px 0 0}
+.posts li{padding:12px 0;border-bottom:1px solid var(--line)}
+.posts .p-title{font-weight:600}
+.posts .p-meta{font-size:14px;color:var(--muted);margin-top:2px}
+.bar-track{height:6px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;background:var(--blue)}
+table.hist{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+table.hist th,table.hist td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:start}
+.section-h{font-size:18px;margin:26px 0 4px}
 .linkbtn{background:none;border:0;color:var(--blue);cursor:pointer;padding:0;font-size:15px;text-decoration:underline}
 ul.grow{padding-inline-start:18px;margin:6px 0}
 @media (max-width:480px){.read{font-size:21px} h1{font-size:26px} .card{padding:18px 16px 14px}}
@@ -93,6 +124,7 @@ ul.grow{padding-inline-start:18px;margin:6px 0}
 </style>
 </head>
 <body>
+<nav class="tabs" id="tabs" role="tablist" hidden><button role="tab" data-v="approve" aria-selected="true">אישורים</button><button role="tab" data-v="growth" aria-selected="false">צמיחה</button></nav>
 <div class="wrap" id="app"><p class="sub">טוען…</p></div>
 <div class="bar" id="bar" hidden><div class="in">
   <span id="picked">לא נבחר עדיין</span>
@@ -160,7 +192,7 @@ const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},se
   if(t){try{localStorage.setItem('mol_token',t);if(h.get('r'))localStorage.setItem('mol_repo',h.get('r'))}catch(e){}
   history.replaceState(null,'',location.pathname+location.search)}})();
 const APP_URL='https://maayanbuline.github.io/approve-panel/';
-const S={repo:store.get('mol_repo')||'maayanbuline/moledet-agent',token:store.get('mol_token')||'',issue:null,items:[],growth:[],queue:[],pos:0,filter:'all',picked:new Set(),skipped:new Set()};
+const S={view:'approve',growth:null,repo:store.get('mol_repo')||'maayanbuline/moledet-agent',token:store.get('mol_token')||'',issue:null,items:[],growth:[],queue:[],pos:0,filter:'all',picked:new Set(),skipped:new Set()};
 const LABEL={all:'הכול',post:'פוסטים',own:'מענה לגולשים',discussion:'דיונים',group:'קבוצות',media:'תמונות',other:'אחר'};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -173,6 +205,7 @@ async function gh(path,opt={}){
   return r;
 }
 function setup(msg){
+  $('#tabs').hidden=true;
   $('#bar').hidden=true;
   $('#app').innerHTML=`<header><h1>חיבור לאישורים</h1></header>
   <div class="card setup">
@@ -218,6 +251,11 @@ function where(it){
   return `<b>${esc(k)}${esc(p)}</b>${it.community?`, ${esc(it.community)}`:''}`;
 }
 function render(){
+  $('#tabs').hidden=!S.token;
+  if(S.view==='growth') return renderGrowth();
+  return renderApprovals();
+}
+function renderApprovals(){
   const app=$('#app');
   const date=S.issue?(S.issue.title.match(/\d{4}-\d{2}-\d{2}/)||[''])[0].split('-').reverse().join('.'):'';
   if(!S.issue){$('#bar').hidden=true;app.innerHTML=`<header><h1>אין אישורים פתוחים</h1></header><p class="sub">יונתן יכין את הרשימה הבאה בבוקר.</p>${footer()}`;bindFooter();return}
@@ -313,6 +351,84 @@ $('#send').onclick=async()=>{
   }catch(e){toast(e.message)}
   finally{b.textContent='שלחי ליונתן';updateBar()}
 };
+
+const GKEYS=[['fb_followers','עוקבים בפייסבוק'],['ig_followers','עוקבים באינסטגרם'],['x_followers','עוקבים ב-X'],['tg_members','מנויים בטלגרם']];
+const ENG=[['fb_reactions','לייקים בפייסבוק'],['fb_comments','תגובות בפייסבוק'],['ig_likes','לייקים באינסטגרם'],['ig_comments','תגובות באינסטגרם']];
+const PLAT={facebook:'פייסבוק',instagram:'אינסטגרם',x:'X',threads:'Threads'};
+const fmtDate=d=>{const [y,m,dd]=String(d).split('-');return `${+dd}.${+m}`};
+async function loadGrowth(){
+  try{
+    const r=await gh(`/repos/${S.repo}/contents/outbox/dashboard/growth.json`,{headers:{'Accept':'application/vnd.github.raw'}});
+    S.growth=await r.json();
+  }catch(e){S.growth={error:/לא נמצא/.test(e.message)?'none':e.message}}
+  render();
+}
+function delta(hist,key){
+  const pts=hist.filter(h=>typeof h[key]==='number');if(pts.length<2)return null;
+  const last=pts[pts.length-1];const ref=pts.find(p=>p.date>=new Date(Date.parse(last.date)-7*864e5).toISOString().slice(0,10))||pts[0];
+  return {d:last[key]-ref[key],days:Math.max(1,Math.round((Date.parse(last.date)-Date.parse(ref.date))/864e5))};
+}
+function spark(pts,key,label){
+  if(pts.length<2)return '';
+  const W=200,H=46,P=4,vals=pts.map(p=>p[key]);let lo=Math.min(...vals),hi=Math.max(...vals);if(hi===lo){hi+=1;lo-=1}
+  const x=i=>P+i*(W-2*P)/(pts.length-1),y=v=>H-P-(v-lo)*(H-2*P)/(hi-lo);
+  const d=pts.map((p,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(p[key]).toFixed(1)}`).join('');
+  const step=(W-2*P)/(pts.length-1);
+  const hits=pts.map((p,i)=>`<rect class="hit" x="${(x(i)-step/2).toFixed(1)}" y="0" width="${step.toFixed(1)}" height="${H}" data-i="${i}"/>`).join('');
+  const li=pts.length-1;
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(label)} לאורך זמן" data-key="${key}">
+    <line class="cross" x1="0" x2="0" y1="0" y2="${H}" visibility="hidden"/>
+    <path class="ln" d="${d}" vector-effect="non-scaling-stroke"/>
+    <circle class="dot" cx="${x(li)}" cy="${y(pts[li][key])}" r="3.5" vector-effect="non-scaling-stroke"/>${hits}</svg>`;
+}
+function bindSparks(hist){
+  document.querySelectorAll('.kpi').forEach(card=>{
+    const svg=card.querySelector('.spark');if(!svg)return;const key=svg.dataset.key;const tip=card.querySelector('.tip');
+    const pts=hist.filter(h=>typeof h[key]==='number');const cross=svg.querySelector('.cross');
+    svg.querySelectorAll('.hit').forEach(rc=>{
+      const show=()=>{const p=pts[+rc.dataset.i];tip.textContent=`${fmtDate(p.date)}: ${p[key].toLocaleString('he-IL')}`;tip.classList.add('show');
+        const cx=+rc.getAttribute('x')+(+rc.getAttribute('width'))/2;cross.setAttribute('x1',cx);cross.setAttribute('x2',cx);cross.setAttribute('visibility','visible')};
+      const hide=()=>{tip.classList.remove('show');cross.setAttribute('visibility','hidden')};
+      rc.addEventListener('mouseenter',show);rc.addEventListener('mouseleave',hide);rc.addEventListener('touchstart',show,{passive:true});
+    });
+  });
+}
+function renderGrowth(){
+  $('#bar').hidden=true;
+  const app=$('#app');const g=S.growth;
+  if(!g){app.innerHTML='<p class="sub">טוען את נתוני הצמיחה…</p>';loadGrowth();return}
+  if(g.error){app.innerHTML=`<header><h1>צמיחה</h1></header><div class="card"><p>${g.error==='none'?'הנתונים יופיעו אחרי דוח הערב הראשון של הגרסה החדשה (21:37). מאז הם מתעדכנים כל ערב.':esc(g.error)}</p></div>${footer()}`;bindFooter();return}
+  const hist=g.history||[];const last=hist[hist.length-1]||{};
+  const tiles=GKEYS.filter(([k])=>hist.some(h=>typeof h[k]==='number')).map(([k,label])=>{
+    const dl=delta(hist,k);const pts=hist.filter(h=>typeof h[k]==='number');const cur=pts[pts.length-1];
+    const dtxt=dl?`<b>${dl.d>0?'+':''}${dl.d.toLocaleString('he-IL')}</b> ב-${dl.days} ימים`:'שינוי יופיע מחר';
+    return `<div class="kpi"><div class="k-label">${label}</div><div class="k-num">${cur[k].toLocaleString('he-IL')}</div><div class="k-delta">${dtxt}</div>${spark(pts,k,label)}<div class="tip" aria-hidden="true"></div></div>`}).join('');
+  const lastOf=k=>{const p=hist.filter(h=>typeof h[k]==='number');return p.length?p[p.length-1][k]:null};
+  const eng=ENG.filter(([k])=>lastOf(k)!==null).map(([k,l])=>`<div class="kpi"><div class="k-label">${l}</div><div class="k-num">${lastOf(k)}</div><div class="k-delta">ב-10 הפוסטים האחרונים</div></div>`).join('');
+  const pb=g.playbook||{};
+  const learn=(pb.lessons&&pb.lessons.length)?`<section class="learn" aria-labelledby="lh"><h3 id="lh">מה יונתן למד</h3>
+    ${pb.summary_he?`<p style="margin:0">${esc(pb.summary_he)}</p>`:''}
+    <ul>${pb.lessons.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+    ${(pb.do_more||[]).length||(pb.do_less||[]).length?`<div class="chips">${(pb.do_more||[]).map(x=>`<span>יותר: ${esc(x)}</span>`).join('')}${(pb.do_less||[]).map(x=>`<span>פחות: ${esc(x)}</span>`).join('')}</div>`:''}
+    ${pb.focus?`<p class="note" style="margin-top:10px">מיקוד השבוע: ${esc(pb.focus)}${pb.sample!=null?` · מבוסס על ${pb.sample} פוסטים`:''}</p>`:''}</section>`
+    :`<section class="learn"><h3>מה יונתן למד</h3><p style="margin:0">הלמידה מתחילה אחרי שיתפרסמו כמה פוסטים בגרסה החדשה. כל ערב יונתן בודק מה עבד ומעדכן את ההנחיות לעצמו.</p></section>`;
+  const posts=g.posts||[];const max=Math.max(1,...posts.map(p=>p.score||0));
+  const plist=posts.length?`<h2 class="section-h">הפוסטים החזקים</h2><ul class="posts">${posts.slice(0,8).map(p=>`<li>
+    <div class="p-title">${esc(p.title||'')}</div>
+    <div class="p-meta">${PLAT[p.platform]||esc(p.platform)} · ${esc(p.community_he||p.community||'')} · ${fmtDate(p.date)} · ${p.likes} לייקים · ${p.comments} תגובות${p.shares?` · ${p.shares} שיתופים`:''}</div>
+    <div class="bar-track" role="img" aria-label="ציון ${p.score}"><div class="bar-fill" style="width:${Math.max(3,Math.round(100*(p.score||0)/max))}%"></div></div></li>`).join('')}</ul>`:'';
+  const cols=GKEYS.filter(([k])=>hist.some(h=>typeof h[k]==='number'));
+  const table=hist.length?`<details class="panel"><summary>טבלת נתונים</summary><table class="hist"><thead><tr><th>תאריך</th>${cols.map(([,l])=>`<th>${l}</th>`).join('')}</tr></thead><tbody>${hist.slice().reverse().slice(0,30).map(h=>`<tr><td>${fmtDate(h.date)}</td>${cols.map(([k])=>`<td>${h[k]??'—'}</td>`).join('')}</tr>`).join('')}</tbody></table></details>`:'';
+  const upd=g.updated?new Date(g.updated).toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  app.innerHTML=`<header><h1>צמיחה</h1><span class="sub">${upd?`עודכן ${upd}`:''}</span></header>
+    <div class="kpis">${tiles||'<p class="sub">עוד אין נתוני עוקבים.</p>'}</div>
+    ${learn}
+    ${eng?`<h2 class="section-h">מעורבות</h2><div class="kpis">${eng}</div>`:''}
+    ${plist}${table}${footer()}`;
+  bindFooter();bindSparks(hist);
+}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{S.view=b.dataset.v;document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));if(S.view==='growth')S.growth=null;render()});
+
 if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
 load();
 </script>
