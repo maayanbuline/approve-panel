@@ -124,6 +124,7 @@ table.wt{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric
 table.wt th{font-weight:600;color:var(--muted);font-size:13px;white-space:nowrap}
 table.wt th,table.wt td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:start;vertical-align:top}
 table.wt td.n{text-align:end;white-space:nowrap}
+.dd{display:block;font-size:12px;line-height:1.2;text-align:left}
 .up{color:var(--up);font-weight:600}.down{color:var(--down);font-weight:600}.flat{color:var(--muted)}
 .seg{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .seg button{border:1px solid var(--line);background:var(--sheet);border-radius:999px;padding:5px 12px;font-size:15px;cursor:pointer}
@@ -299,7 +300,7 @@ function renderApprovals(){
     ${it.original?`<div class="about"><small>${it.type==='own'?'מה כתבו לנו':'הפוסט המקורי'}</small>${esc(it.original)}</div>`:''}
     ${it.type==='discussion'||it.type==='group'?`<div class="about"><small>${it.type==='group'?'הקבוצה':'הפוסט שיונתן מגיב אליו'}</small>${esc(cleanHead(it.headline))||'—'}${/^https?:/.test(it.target)?`<br><a href="${esc(it.target)}" target="_blank" rel="noopener">${it.type==='group'?'פתחי את הקבוצה':'פתחי לקרוא את הפוסט המלא'}</a>`:''}</div>`:''}
     ${it.type!=='media'?`<div class="label">${it.type==='post'?'הפוסט של יונתן':it.type==='group'?'מה יונתן יפרסם בקבוצה':'התגובה של יונתן'}</div>`:''}
-    ${it.type==='media'?`<img class="img" id="img" alt="תמונה שנשלחה לספרייה">${it.sentBy?`<p class="sub">נשלחה על ידי ${esc(it.sentBy)}</p>`:''}`:`<div class="read">${esc(readText)}</div>`}
+    ${it.type==='media'?`<img class="img" id="img" alt="תמונה שנשלחה לספרייה">${it.sentBy?`<p class="sub">נשלחה על ידי ${esc(it.sentBy)}</p>`:''}`:`<div class="read" dir="auto">${esc(readText)}</div>`}
     ${it.translation&&it.text?`<details><summary>הטקסט שיפורסם, בשפת הקהילה</summary><div class="orig" dir="auto">${esc(it.text)}</div></details>`:''}
     ${link}
     <div class="actions"><button class="btn skip" id="skip">דלגי</button><button class="btn ok ${on?'on':''}" id="ok">${on?'✓ נבחר לאישור':'אשרי'}</button></div>
@@ -473,7 +474,7 @@ function dailyFrom(hist){let prev={};return hist.map(h=>{const r={date:h.date};D
 function dailyTable(rows){
   if(!rows||!rows.length)return '';
   const cols=DCOLS.filter(([k])=>rows.some(r=>typeof r[k]==='number'));
-  const cell=(r,k)=>{if(typeof r[k]!=='number')return '—';const d=r[k+'_d'];const ds=typeof d!=='number'||d===0?'':`<span class="${d>0?'up':'down'}" dir="ltr"> ${d>0?'+':''}${d}</span>`;return `${r[k].toLocaleString('he-IL')}${ds}`};
+  const cell=(r,k)=>{if(typeof r[k]!=='number')return '—';const d=r[k+'_d'];const ds=typeof d!=='number'||d===0?'':`<span class="dd ${d>0?'up':'down'}" dir="ltr">${d>0?'+':''}${d}</span>`;return `<span dir="ltr">${r[k].toLocaleString('he-IL')}</span>${ds}`};
   return `<h2 class="section-h">עוקבים מיום ליום</h2><div class="tscroll"><table class="wt"><thead><tr><th>תאריך</th>${cols.map(([,l])=>`<th>${l}</th>`).join('')}</tr></thead><tbody>
   ${rows.slice(0,14).map(r=>`<tr><td>${fmtDate(r.date)}</td>${cols.map(([k])=>`<td class="n">${cell(r,k)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
