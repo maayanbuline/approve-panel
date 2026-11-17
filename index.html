@@ -374,15 +374,18 @@ async function checkStatus(){
     if(code)$('#cpb').onclick=async()=>{try{await navigator.clipboard.writeText(code.trim());toast('הועתק. עכשיו הדביקי ב-Claude בכרום.')}catch(e){toast('לא הצלחתי להעתיק. סמני את הטקסט והעתיקי ידנית.')}};
   }catch(e){box.innerHTML=`<p class="err">${esc(e.message)}</p>`}
 }
+async function approveNow(ids){
+  const r=await gh(`/repos/${S.repo}/issues/${S.issue.number}`);const iss=await r.json();let body=iss.body||'';
+  ids.forEach(id=>{body=body.replace(new RegExp('^(\\s*[-*]) \\[ \\] \\['+id+'\\]','m'),'$1 [x] ['+id+']')});
+  await gh(`/repos/${S.repo}/issues/${S.issue.number}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})});
+  toast(`נשלח. יונתן מפרסם ${ids.length===1?'את הפוסט':ids.length+' פריטים'} בדקות הקרובות.`);
+  S.issue.body=body;S.items=parseIssue(body).items;
+}
 $('#send').onclick=async()=>{
   const ids=[...S.picked];if(!ids.length||!S.issue)return;
   const b=$('#send');b.disabled=true;b.textContent='שולחת…';
   try{
-    const r=await gh(`/repos/${S.repo}/issues/${S.issue.number}`);const iss=await r.json();let body=iss.body||'';
-    ids.forEach(id=>{body=body.replace(new RegExp('^(\\s*[-*]) \\[ \\] \\['+id+'\\]','m'),'$1 [x] ['+id+']')});
-    await gh(`/repos/${S.repo}/issues/${S.issue.number}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})});
-    toast(`נשלח. יונתן מפרסם ${ids.length} פריטים בדקות הקרובות.`);
-    S.issue.body=body;S.items=parseIssue(body).items;S.picked=new Set();S.pos=0;buildQueue();render();
+    await approveNow(ids);S.picked=new Set();S.pos=0;buildQueue();render();
     setTimeout(()=>{if($('#chk'))checkStatus()},150000);
   }catch(e){toast(e.message)}
   finally{b.textContent='שלחי ליונתן';updateBar()}
@@ -538,16 +541,24 @@ function renderToday(){
     const topics=(c.topics||[]).map((t,i)=>`<div class="topic"><div class="t-h"><span class="t-name">${i+1}. ${esc(t.topic)}</span><span class="t-exp">פוטנציאל חשיפה ${t.exposure??t.heat??0}/100</span></div>
       ${t.why_hot?`<p>${esc(t.why_hot)}</p>`:''}${t.angle?`<p><b>הזווית של יונתן:</b> ${esc(cleanAngle(t.angle))}</p>`:''}
       ${(t.hashtags||[]).length?`<div class="tags">${t.hashtags.map(esc).join(' ')}</div>`:''}</div>`).join('');
-    const posts=(c.posts||[]).length?`<h3 style="margin:16px 0 0;font-size:17px">פוסטים מוצעים (ממתינים בלשונית אישורים)</h3><ul class="sugg">${c.posts.map(p=>`<li>${esc(p.first_line)}<div class="why">${PLAT[p.platform]||esc(p.platform)}${p.topic?` · ${esc(p.topic)}`:''}</div>${p.id?`<button class="copy" data-go="${esc(p.id)}" style="background:var(--field);color:#fff">לאישור ופרסום</button>`:''}</li>`).join('')}</ul>`:'';
+    const posts=(c.posts||[]).length?`<h3 style="margin:16px 0 0;font-size:17px">פוסטים מוכנים לפרסום</h3><ul class="sugg">${c.posts.map(p=>{const it=S.items.find(i=>i.id===p.id);const full=it?(it.translation||it.text):p.first_line;
+      const btn=!p.id?'':it&&it.checked?'<p class="note" style="color:var(--field);font-weight:700">✓ אושר ונשלח לפרסום</p>'
+        :it?`<button class="copy" data-pub="${esc(p.id)}" style="background:var(--field);color:#fff">פרסמי</button> <button class="linkbtn" data-go="${esc(p.id)}">לכרטיס המלא</button>`
+        :'<p class="note">כבר לא ממתין לאישור</p>';
+      return `<li><div style="font-family:var(--read);font-size:19px;white-space:pre-wrap" dir="auto">${esc(full)}</div>
+      ${it&&it.translation&&it.text?`<details><summary>הטקסט שיפורסם, בשפת הקהילה</summary><div class="orig" dir="auto">${esc(it.text)}</div></details>`:''}
+      <div class="why">${PLAT[p.platform]||esc(p.platform)}${p.topic?` · ${esc(p.topic)}`:''}</div>${btn}</li>`}).join('')}</ul>`:'';
     const acc=(c.accounts||[]).length?`<h3 style="margin:16px 0 0;font-size:17px">חשבונות לעקוב</h3><ul class="sugg">${c.accounts.map(a=>`<li><a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.name||a.url)}</a> · ${esc(a.platform)}${a.followers?` · ${esc(a.followers)}`:''}${a.why?`<div class="why">${esc(a.why)}</div>`:''}</li>`).join('')}</ul>`:'';
     const grp=[...(c.groups||[]),...(c.group_search||[])];
     const gr=grp.length?`<h3 style="margin:16px 0 0;font-size:17px">קבוצות להצטרף</h3><ul class="sugg">${grp.map(x=>`<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.name||x.url)}</a>${x.members?` · ${esc(x.members)}`:''}${x.why&&x.why!=='search'?`<div class="why">${esc(x.why)}</div>`:''}</li>`).join('')}</ul>`:'';
     return `<h2 class="comm-h">${esc(c.community_he)}</h2>${topics?`<p class="sub" style="margin:0">הנושאים החמים עם החשיפה הגבוהה ביותר</p>${topics}`:''}${posts}${acc}${gr}`}).join('');
   app.innerHTML=`<header><h1>הצעות היום</h1><span class="sub">${g.date?fmtDate(g.date):''}${stale?' · עוד לא עודכן היום':''}</span></header>
-    <div class="panel"><p>זה דף רעיונות בלבד. <b>לפרסום:</b> לחצי "לאישור ופרסום" ליד פוסט מוצע, או עברי ללשונית "אישורים", לחצי "אשרי" ואז "שלחי ליונתן" למטה. יונתן מפרסם תוך 2–3 דקות.</p></div>
+    <div class="panel"><p><b>לפרסום:</b> לחצי "פרסמי" מתחת לפוסט המוכן. יונתן מפרסם תוך 2–3 דקות (או בשעת השיא של הקהילה, אם עוד לא הגיעה).</p></div>
     ${blocks||'<div class="card"><p>אין הצעות להיום.</p></div>'}${footer()}`;
   bindFooter();
   app.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>goApprove(b.dataset.go));
+  app.querySelectorAll('[data-pub]').forEach(b=>b.onclick=async()=>{if(!S.issue)return;b.disabled=true;b.textContent='שולחת…';
+    try{await approveNow([b.dataset.pub]);renderToday()}catch(e){toast(e.message);b.disabled=false;b.textContent='פרסמי'}});
 }
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{S.view=b.dataset.v;document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));if(S.view==='growth')S.dash=null;if(S.view==='today'||S.view==='groups')S.today=null;render()});
 
