@@ -312,7 +312,7 @@ function renderApprovals(){
   <article class="card" aria-live="polite">
     <div class="meta"><span>${where(it)}</span>${sched(it)?`<span class="when">${sched(it)}</span>`:''}</div>
     <div class="what">${what(it)}</div>
-    ${it.original?`<div class="about"><small>${it.type==='own'?'מה כתבו לנו':it.type==='gcomment'?'מה החבר כתב בקבוצה':'הפוסט המקורי'}</small>${esc(it.original)}${it.type==='gcomment'&&/^https?:/.test(it.target)?`<br><a href="${esc(it.target)}" target="_blank" rel="noopener">פתחי את הפוסט בקבוצה</a>`:''}</div>`:''}
+    ${it.original?`<div class="about"><small>${it.type==='own'?'מה כתבו לנו':it.type==='gcomment'?'מה החבר כתב בקבוצה':'הפוסט המקורי'}</small>${esc(it.original)}${it.type==='gcomment'&&/^https?:/.test(it.target)?`<br><a href="${esc(it.target)}" target="_blank" rel="noopener" data-copyopen="${esc(it.id)}">העתקת התגובה ופתיחת הפוסט</a>`:''}</div>`:''}
     ${it.type==='discussion'||it.type==='group'||(it.type==='gcomment'&&!it.original)?`<div class="about"><small>${it.type==='group'?'הקבוצה':'הפוסט שיונתן מגיב אליו'}</small>${esc(cleanHead(it.headline))||'—'}${/^https?:/.test(it.target)?`<br><a href="${esc(it.target)}" target="_blank" rel="noopener">${it.type==='group'?'פתחי את הקבוצה':'פתחי לקרוא את הפוסט המלא'}</a>`:''}</div>`:''}
     ${it.type!=='media'?`<div class="label">${it.type==='post'?'הפוסט של יונתן':it.type==='group'?'מה יונתן יפרסם בקבוצה':'התגובה של יונתן'}</div>`:''}
     ${it.type==='media'?`<img class="img" id="img" alt="תמונה שנשלחה לספרייה">${it.sentBy?`<p class="sub">נשלחה על ידי ${esc(it.sentBy)}</p>`:''}`:`<div class="read" dir="auto">${esc(readText)}</div>`}
@@ -504,6 +504,8 @@ function goApprove(id){
   if(i<0){toast('הפוסט הזה כבר לא ממתין לאישור (אושר, נדחה או פורסם).');render();return}
   S.pos=i;render();window.scrollTo(0,0);
 }
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-copyopen]');if(!a)return;const it=S.items.find(i=>i.id===a.dataset.copyopen);if(it)navigator.clipboard.writeText(it.text).then(()=>toast('התגובה הועתקה. בפוסט: לחצי בתיבת התגובה, הדביקי ושלחי.')).catch(()=>{})});
+const FBRECENT=q=>'https://www.facebook.com/search/posts/?q='+encodeURIComponent(q)+'&filters=eyJyZWNlbnRfcG9zdHM6MCI6IntcIm5hbWVcIjpcInJlY2VudF9wb3N0c1wiLFwiYXJnc1wiOlwiXCJ9In0%3D';
 function renderGroups(){
   $('#bar').hidden=true;const app=$('#app');const g=S.today;
   if(!g){app.innerHTML='<p class="sub">טוען את התגובות לקבוצות…</p>';loadToday();return}
@@ -513,7 +515,7 @@ function renderGroups(){
     <div class="panel"><h3>איך עובדים</h3>
     <p>1. <b>תגובות לפוסטים שיונתן מצא</b> (קבוצות ציבוריות) – בלשונית "אישורים", בקטגוריה "תגובות בקבוצות"${nPending?` (${nPending} ממתינות)`:''}.</p>
     <p>2. <b>קבוצות סגורות:</b> לחצי "העתקה ל-Claude בכרום", פתחי את Claude בכרום והדביקי. הוא יעבור על הקבוצות, יכתוב תגובה לכל פוסט מתאים ויציג לך לאישור לפני פרסום.</p>
-    <p>3. <b>תגובה מהירה ידנית:</b> מצאי פוסט מתאים, בחרי למטה תגובה לפי המצב, "העתקה", ושנו מילה אם צריך. להגיב בשם העמוד Moledet.</p></div>`;
+    <p>3. <b>תגובה מהירה:</b> לחצי "העתקה ופתיחת פוסטים מתאימים". התגובה מועתקת ונפתחים בפייסבוק פוסטים אחרונים על הנושא. בחרי פוסט, לחצי בתיבת התגובה, ודאי שכתוב "Comment as Moledet", הדביקי (Cmd+V, או לחיצה ארוכה ← הדבקה בטלפון) ושלחי. פייסבוק לא מאפשר לפתוח פוסט עם תגובה כתובה מראש, לכן צריך להדביק.</p></div>`;
   if(!list.length){app.innerHTML=head+`<div class="card"><p>${g.error?'ההצעות יופיעו אחרי מחזור הבוקר הבא.':'עוד אין תגובות לקבוצות להיום. הן נוצרות במחזור הבוקר.'}</p></div>${footer()}`;bindFooter();return}
   const C=[];
   const blocks=list.map(c=>{const k=c.group_comments;const pi=C.push(k.chrome_prompt||'')-1;
@@ -521,12 +523,12 @@ function renderGroups(){
     const bank=(k.bank||[]).map(b=>{const i=C.push(b.text)-1;return `<div class="topic"><div class="t-h"><span class="t-name" style="font-size:16px">${esc(b.situation||'תגובה')}</span>${b.topic?`<span class="t-exp">${esc(b.topic)}</span>`:''}</div>
       ${b.translation?`<p style="font-family:var(--read);font-size:19px">${esc(b.translation)}</p>`:''}
       <details style="margin-top:6px"><summary>הטקסט לפרסום</summary><div class="orig" dir="auto">${esc(b.text)}</div></details>
-      <button class="copy" data-c="${i}">העתקה</button></div>`}).join('');
+      ${(()=>{const u=b.post_url||(b.search?FBRECENT(b.search):((k.groups||[])[0]||{}).url);return u?`<button class="copy" data-c="${i}" data-open="${esc(u)}" style="background:var(--field);color:#fff">${b.post_url?'העתקה ופתיחת הפוסט':'העתקה ופתיחת פוסטים מתאימים'}</button> `:''})()}<button class="copy" data-c="${i}">העתקה בלבד</button>${b.search&&!b.post_url?`<div class="why" style="margin-top:6px">חיפוש בפייסבוק: ${esc(b.search)}</div>`:''}</div>`}).join('');
     return `<h2 class="comm-h">${esc(c.community_he)}</h2>
       ${k.chrome_prompt?`<button class="copy" data-c="${pi}" style="background:var(--blue);color:var(--blue-ink)">העתקה ל-Claude בכרום</button>`:''}
       ${groups}${bank?`<p class="sub" style="margin:14px 0 0">תגובות מוכנות לפי מצב (${k.bank.length})</p>${bank}`:''}`}).join('');
   app.innerHTML=head+blocks+footer();bindFooter();
-  app.querySelectorAll('[data-c]').forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(C[+b.dataset.c]);toast(b.textContent.includes('כרום')?'הועתק. הדביקי בחלונית של Claude בכרום.':'הועתק. הדביקי בתגובה בקבוצה.')}catch(e){toast('לא הצלחתי להעתיק. סמני את הטקסט והעתיקי ידנית.')}});
+  app.querySelectorAll('[data-c]').forEach(b=>b.onclick=async()=>{const p=navigator.clipboard.writeText(C[+b.dataset.c]);if(b.dataset.open){window.open(b.dataset.open,'_blank','noopener');p.then(()=>toast('התגובה הועתקה. בפוסט: לחצי בתיבת התגובה, הדביקי ושלחי.')).catch(()=>toast('לא הצלחתי להעתיק. חזרי לכאן ולחצי "העתקה בלבד".'));return}try{await p;toast(b.textContent.includes('כרום')?'הועתק. הדביקי בחלונית של Claude בכרום.':'הועתק. הדביקי בתגובה בקבוצה.')}catch(e){toast('לא הצלחתי להעתיק. סמני את הטקסט והעתיקי ידנית.')}});
 }
 async function loadToday(){
   try{S.today=await raw('outbox/dashboard/today.json')}catch(e){S.today={error:/לא נמצא/.test(e.message)?'none':e.message}}
