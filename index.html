@@ -157,7 +157,7 @@ html.mac-app[data-theme="dark"] body::before{opacity:.45}
 </style>
 </head>
 <body>
-<nav class="tabs" id="tabs" role="tablist" hidden><button role="tab" data-v="approve" aria-selected="true">אישורים</button><button role="tab" data-v="today" aria-selected="false">הצעות היום</button><button role="tab" data-v="groups" aria-selected="false">קבוצות</button><button role="tab" data-v="growth" aria-selected="false">צמיחה</button></nav>
+<nav class="tabs" id="tabs" role="tablist" hidden><button role="tab" data-v="approve" aria-selected="true">אישורים</button><button role="tab" data-v="replies" aria-selected="false">תגובות</button><button role="tab" data-v="today" aria-selected="false">הצעות היום</button><button role="tab" data-v="groups" aria-selected="false">קבוצות</button><button role="tab" data-v="growth" aria-selected="false">צמיחה</button></nav>
 <div class="wrap" id="app"><p class="sub">טוען…</p></div>
 <div class="bar" id="bar" hidden><div class="in">
   <span id="picked">לא נבחר עדיין</span>
@@ -286,6 +286,7 @@ function where(it){
 }
 function render(){
   $('#tabs').hidden=!S.token;
+  if(S.view==='replies') return renderReplies();
   if(S.view==='growth') return renderGrowth();
   if(S.view==='today') return renderToday();
   if(S.view==='groups') return renderGroups();
@@ -318,6 +319,7 @@ function renderApprovals(){
     ${it.type==='media'?`<img class="img" id="img" alt="תמונה שנשלחה לספרייה">${it.sentBy?`<p class="sub">נשלחה על ידי ${esc(it.sentBy)}</p>`:''}`:`<div class="read" dir="auto">${esc(readText)}</div>`}
     ${it.translation&&it.text?`<details><summary>הטקסט שיפורסם, בשפת הקהילה</summary><div class="orig" dir="auto">${esc(it.text)}</div></details>`:''}
     ${link}
+    ${canPaste(it)?`<button class="copy" id="cpo" style="background:var(--field);color:#fff;margin-top:14px">העתקה ופתיחת הפוסט</button><p class="note">התגובה מועתקת והפוסט נפתח. לחצי בתיבת התגובה, הדביקי ושלחי. הפריט גם נבחר לאישור.</p>`:''}
     <div class="actions"><button class="btn skip" id="skip">דלגי</button><button class="btn ok ${on?'on':''}" id="ok">${on?'✓ נבחר לאישור':'אשרי'}</button></div>
     ${S.pos>0?'<button class="back" id="prev">חזרה לקודם</button>':''}
   </article>${status()}${footer()}`;
@@ -326,6 +328,7 @@ function renderApprovals(){
   $('#skip').onclick=()=>{S.skipped.add(it.id);store.set('mol_skip_'+S.issue.number,JSON.stringify([...S.skipped]));buildQueue();render()};
   if($('#prev'))$('#prev').onclick=()=>{S.pos=Math.max(0,S.pos-1);render()};
   if(it.type==='media'&&it.image)loadImg(it.image);
+  if($('#cpo'))$('#cpo').onclick=()=>{copyOpen(it);S.picked.add(it.id);updateBar();$('#ok').textContent='✓ נבחר לאישור';$('#ok').classList.add('on')};
 }
 function next(){S.pos++;if(S.pos>=S.queue.length){S.queue=[];}render()}
 function updateBar(){const n=S.picked.size;$('#picked').textContent=n?`נבחרו ${n} לאישור`:'לא נבחר עדיין';$('#send').disabled=!n}
@@ -529,6 +532,53 @@ function renderGroups(){
       ${groups}${bank?`<p class="sub" style="margin:14px 0 0">תגובות מוכנות לפי מצב (${k.bank.length})</p>${bank}`:''}`}).join('');
   app.innerHTML=head+blocks+footer();bindFooter();
   app.querySelectorAll('[data-c]').forEach(b=>b.onclick=async()=>{const p=navigator.clipboard.writeText(C[+b.dataset.c]);if(b.dataset.open){window.open(b.dataset.open,'_blank','noopener');p.then(()=>toast('התגובה הועתקה. בפוסט: לחצי בתיבת התגובה, הדביקי ושלחי.')).catch(()=>toast('לא הצלחתי להעתיק. חזרי לכאן ולחצי "העתקה בלבד".'));return}try{await p;toast(b.textContent.includes('כרום')?'הועתק. הדביקי בחלונית של Claude בכרום.':'הועתק. הדביקי בתגובה בקבוצה.')}catch(e){toast('לא הצלחתי להעתיק. סמני את הטקסט והעתיקי ידנית.')}});
+}
+// ---------- Replies tab (v8): 50+ replies a day, one tap to copy and open the post ----------
+const RTYPES=['discussion','gcomment'];
+const REPLY_GOAL=50;
+const isX=it=>/^(x|twitter)$/i.test(String(it.platform||'').trim())||/\/\/(www\.)?(x|twitter)\.com\//.test(it.target||'');
+const canPaste=it=>RTYPES.includes(it.type)&&/^https?:/.test(it.target||'')&&!isX(it);
+const doneKey=()=>'mol_done_'+(S.issue?S.issue.number:'');
+const doneSet=()=>new Set(JSON.parse(store.get(doneKey())||'[]'));
+function markDone(id){const d=doneSet();d.add(id);store.set(doneKey(),JSON.stringify([...d]))}
+function copyOpen(it){
+  const p=navigator.clipboard.writeText(it.text||'');
+  window.open(it.target,'_blank','noopener');
+  p.then(()=>toast('התגובה הועתקה. בפוסט: לחצי בתיבת התגובה, ודאי שכתוב "Moledet", הדביקי ושלחי.'))
+   .catch(()=>toast('לא הצלחתי להעתיק. חזרי לכאן, לחצי "העתקה בלבד" ונסי שוב.'));
+}
+function renderReplies(){
+  const app=$('#app');
+  if(!S.issue){$('#bar').hidden=true;app.innerHTML=`<header><h1>תגובות</h1></header><div class="card"><p>אין רשימה פתוחה. יונתן מכין תגובות חדשות בכל בוקר.</p></div>${footer()}`;bindFooter();return}
+  $('#bar').hidden=false;updateBar();
+  const done=doneSet();
+  const all=S.items.filter(i=>RTYPES.includes(i.type));
+  const handled=all.filter(i=>i.checked||done.has(i.id)||S.picked.has(i.id)).length;
+  const open=all.filter(i=>!done.has(i.id)&&!S.skipped.has(i.id)).sort((a,b)=>(a.checked-b.checked)||(isX(a)-isX(b)));
+  const pct=Math.min(100,Math.round(100*handled/REPLY_GOAL));
+  const head=`<header><h1>תגובות</h1><span class="sub">${all.length} מוכנות היום</span></header>
+  <div class="panel"><h3>${handled} מתוך ${REPLY_GOAL} היום</h3><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+  <p class="note" style="margin-top:8px"><b>פייסבוק, אינסטגרם וקבוצות:</b> "העתקה ופתיחת הפוסט" ← בפוסט לחצי בתיבת התגובה ← הדביקי ← שלחי ← חזרי ולחצי "פרסמתי".<br><b>X:</b> לחצי "אשרי" – התגובה יוצאת לבד.<br>בסוף לחצי "שלחי ליונתן" למטה, כדי שהכול יירשם.</p></div>`;
+  if(!open.length){app.innerHTML=head+`<div class="done"><h2>עברת על כל התגובות</h2><p class="sub">${S.picked.size?'לחצי "שלחי ליונתן" למטה.':'תגובות חדשות יגיעו מחר בבוקר.'}</p></div>${footer()}`;bindFooter();return}
+  app.innerHTML=head+open.map(it=>{const on=S.picked.has(it.id)||it.checked;const x=isX(it);
+    return `<article class="card" style="margin-top:12px" data-id="${it.id}">
+    <div class="meta"><span>${where(it)}</span>${it.checked?'<span class="when">✓ אושר</span>':''}</div>
+    <div class="about" dir="auto"><small>${it.type==='gcomment'?'הפוסט בקבוצה':'הפוסט'}</small>${esc(cleanHead(it.headline))||'—'}${it.original&&it.original!==it.headline?`<br>${esc(it.original)}`:''}</div>
+    <div class="label">התגובה של יונתן</div>
+    <div class="read" dir="auto" style="font-size:20px">${esc(it.translation||it.text)}</div>
+    ${it.translation?`<details><summary>הטקסט שיפורסם</summary><div class="orig" dir="auto">${esc(it.text)}</div></details>`:''}
+    ${x?`<div class="actions"><a class="btn skip" style="text-align:center;text-decoration:none" href="${esc(it.target)}" target="_blank" rel="noopener">פתיחת הפוסט</a><button class="btn ok ${on?'on':''}" data-pick="${it.id}" ${it.checked?'disabled':''}>${it.checked?'✓ יוצא לבד ב-X':on?'✓ נבחר':'אשרי – יוצא לבד ב-X'}</button></div>`
+      :`<button class="copy" data-co="${it.id}" style="background:var(--field);color:#fff;margin-top:14px;width:100%;padding:13px">העתקה ופתיחת הפוסט</button>
+    <div class="actions"><button class="btn skip" data-skip="${it.id}">דלגי</button><button class="btn ok" data-done="${it.id}">פרסמתי ✓</button></div>
+    <button class="linkbtn" data-copy="${it.id}" style="margin-top:8px">העתקה בלבד</button>`}
+    </article>`}).join('')+footer();
+  bindFooter();
+  const byId=id=>S.items.find(i=>i.id===id);
+  app.querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>{const it=byId(b.dataset.co);copyOpen(it);if(!it.checked)S.picked.add(it.id);updateBar()});
+  app.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(byId(b.dataset.copy).text||'').then(()=>toast('הועתק.')).catch(()=>toast('לא הצלחתי להעתיק.'))});
+  app.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>{const it=byId(b.dataset.done);if(!it.checked)S.picked.add(it.id);markDone(it.id);updateBar();renderReplies()});
+  app.querySelectorAll('[data-skip]').forEach(b=>b.onclick=()=>{S.skipped.add(b.dataset.skip);store.set('mol_skip_'+S.issue.number,JSON.stringify([...S.skipped]));renderReplies()});
+  app.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{const id=b.dataset.pick;if(S.picked.has(id))S.picked.delete(id);else S.picked.add(id);updateBar();renderReplies()});
 }
 async function loadToday(){
   try{S.today=await raw('outbox/dashboard/today.json')}catch(e){S.today={error:/לא נמצא/.test(e.message)?'none':e.message}}
