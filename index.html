@@ -518,18 +518,22 @@ function renderGroups(){
     <div class="panel"><h3>איך עובדים</h3>
     <p>1. <b>תגובות לפוסטים שיונתן מצא</b> (קבוצות ציבוריות) – בלשונית "אישורים", בקטגוריה "תגובות בקבוצות"${nPending?` (${nPending} ממתינות)`:''}.</p>
     <p>2. <b>קבוצות סגורות:</b> לחצי "העתקה ל-Claude בכרום", פתחי את Claude בכרום והדביקי. הוא יעבור על הקבוצות, יכתוב תגובה לכל פוסט מתאים ויציג לך לאישור לפני פרסום.</p>
-    <p>3. <b>תגובה מהירה:</b> לחצי "העתקה ופתיחת פוסטים מתאימים". התגובה מועתקת ונפתחים בפייסבוק פוסטים אחרונים על הנושא. בחרי פוסט, לחצי בתיבת התגובה, ודאי שכתוב "Comment as Moledet", הדביקי (Cmd+V, או לחיצה ארוכה ← הדבקה בטלפון) ושלחי. פייסבוק לא מאפשר לפתוח פוסט עם תגובה כתובה מראש, לכן צריך להדביק.</p></div>`;
+    <p>3. <b>תגובה מהירה:</b> לחצי "העתקה ופתיחת הפוסט". התגובה מועתקת ונפתח בדיוק הפוסט שהיא נכתבה עבורו. לחצי בתיבת התגובה, ודאי שכתוב "Comment as Moledet", הדביקי (Cmd+V, או לחיצה ארוכה ← הדבקה בטלפון) ושלחי.</p></div>`;
   if(!list.length){app.innerHTML=head+`<div class="card"><p>${g.error?'ההצעות יופיעו אחרי מחזור הבוקר הבא.':'עוד אין תגובות לקבוצות להיום. הן נוצרות במחזור הבוקר.'}</p></div>${footer()}`;bindFooter();return}
   const C=[];
   const blocks=list.map(c=>{const k=c.group_comments;const pi=C.push(k.chrome_prompt||'')-1;
     const groups=(k.groups||[]).length?`<details class="panel"><summary>הקבוצות (${k.groups.length})</summary><ul class="grow">${k.groups.map(x=>`<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.name||x.url)}</a></li>`).join('')}</ul></details>`:'';
-    const bank=(k.bank||[]).map(b=>{const i=C.push(b.text)-1;return `<div class="topic"><div class="t-h"><span class="t-name" style="font-size:16px">${esc(b.situation||'תגובה')}</span>${b.topic?`<span class="t-exp">${esc(b.topic)}</span>`:''}</div>
+    const card=b=>{const i=C.push(b.text)-1;return `<div class="topic"><div class="t-h"><span class="t-name" style="font-size:16px">${esc(b.situation||'תגובה')}</span>${b.topic?`<span class="t-exp">${esc(b.topic)}</span>`:''}</div>
       ${b.translation?`<p style="font-family:var(--read);font-size:19px">${esc(b.translation)}</p>`:''}
       <details style="margin-top:6px"><summary>הטקסט לפרסום</summary><div class="orig" dir="auto">${esc(b.text)}</div></details>
-      ${(()=>{const u=b.post_url||(b.search?FBRECENT(b.search):((k.groups||[])[0]||{}).url);return u?`<button class="copy" data-c="${i}" data-open="${esc(u)}" style="background:var(--field);color:#fff">${b.post_url?'העתקה ופתיחת הפוסט':'העתקה ופתיחת פוסטים מתאימים'}</button> `:''})()}<button class="copy" data-c="${i}">העתקה בלבד</button>${b.search&&!b.post_url?`<div class="why" style="margin-top:6px">חיפוש בפייסבוק: ${esc(b.search)}</div>`:''}</div>`}).join('');
+      ${b.post_url?`<button class="copy" data-c="${i}" data-open="${esc(b.post_url)}" style="background:var(--field);color:#fff">העתקה ופתיחת הפוסט</button> `:''}<button class="copy" data-c="${i}">העתקה בלבד</button>
+      ${!b.post_url&&b.search?`<div class="why" style="margin-top:6px"><a href="${esc(FBRECENT(b.search))}" target="_blank" rel="noopener">חיפוש פוסטים דומים בפייסבוק</a> (${esc(b.search)})</div>`:''}</div>`};
+    const linked=(k.bank||[]).filter(b=>b.post_url),general=(k.bank||[]).filter(b=>!b.post_url);
+    const bank=(linked.length?`<p class="sub" style="margin:14px 0 0"><b>תגובות לפוסטים אמיתיים בקבוצות (${linked.length})</b> – הכפתור פותח בדיוק את הפוסט</p>${linked.map(card).join('')}`:'')
+      +(general.length?`<details class="panel"><summary>תגובות כלליות לפי מצב, בלי פוסט מסוים (${general.length})</summary>${general.map(card).join('')}</details>`:'');
     return `<h2 class="comm-h">${esc(c.community_he)}</h2>
       ${k.chrome_prompt?`<button class="copy" data-c="${pi}" style="background:var(--blue);color:var(--blue-ink)">העתקה ל-Claude בכרום</button>`:''}
-      ${groups}${bank?`<p class="sub" style="margin:14px 0 0">תגובות מוכנות לפי מצב (${k.bank.length})</p>${bank}`:''}`}).join('');
+      ${groups}${bank}`}).join('');
   app.innerHTML=head+blocks+footer();bindFooter();
   app.querySelectorAll('[data-c]').forEach(b=>b.onclick=async()=>{const p=navigator.clipboard.writeText(C[+b.dataset.c]);if(b.dataset.open){window.open(b.dataset.open,'_blank','noopener');p.then(()=>toast('התגובה הועתקה. בפוסט: לחצי בתיבת התגובה, הדביקי ושלחי.')).catch(()=>toast('לא הצלחתי להעתיק. חזרי לכאן ולחצי "העתקה בלבד".'));return}try{await p;toast(b.textContent.includes('כרום')?'הועתק. הדביקי בחלונית של Claude בכרום.':'הועתק. הדביקי בתגובה בקבוצה.')}catch(e){toast('לא הצלחתי להעתיק. סמני את הטקסט והעתיקי ידנית.')}});
 }
