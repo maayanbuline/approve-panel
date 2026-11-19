@@ -515,12 +515,12 @@ function renderGroups(){
   if(!g){app.innerHTML='<p class="sub">טוען את התגובות לקבוצות…</p>';loadToday();return}
   const list=(g.communities||[]).filter(c=>c.group_comments&&((c.group_comments.bank||[]).length||(c.group_comments.groups||[]).length));
   const nPending=S.items.filter(i=>i.type==='gcomment'&&!i.checked).length;
-  const head=`<header><h1>תגובות בקבוצות</h1><span class="sub">${g.date?fmtDate(g.date):''}</span></header>
+  const head=`<header><h1>תגובות בקבוצות</h1><span class="sub">${g.date?fmtDate(g.date):''}</span></header>${quickPanel()}
     <div class="panel"><h3>איך עובדים</h3>
     <p>1. <b>תגובות לפוסטים שיונתן מצא</b> (קבוצות ציבוריות) – בלשונית "אישורים", בקטגוריה "תגובות בקבוצות"${nPending?` (${nPending} ממתינות)`:''}.</p>
     <p>2. <b>קבוצות סגורות:</b> לחצי "העתקה ל-Claude בכרום", פתחי את Claude בכרום והדביקי. הוא יעבור על הקבוצות, יכתוב תגובה לכל פוסט מתאים ויציג לך לאישור לפני פרסום.</p>
     <p>3. <b>תגובה מהירה:</b> לחצי "העתקה ופתיחת הפוסט". התגובה מועתקת ונפתח בדיוק הפוסט שהיא נכתבה עבורו. לחצי בתיבת התגובה, ודאי שכתוב "Comment as Moledet", הדביקי (Cmd+V, או לחיצה ארוכה ← הדבקה בטלפון) ושלחי.</p></div>`;
-  if(!list.length){app.innerHTML=head+`<div class="card"><p>${g.error?'ההצעות יופיעו אחרי מחזור הבוקר הבא.':'עוד אין תגובות לקבוצות להיום. הן נוצרות במחזור הבוקר.'}</p></div>${footer()}`;bindFooter();return}
+  if(!list.length){app.innerHTML=head+`<div class="card"><p>${g.error?'ההצעות יופיעו אחרי מחזור הבוקר הבא.':'עוד אין תגובות לקבוצות להיום. הן נוצרות במחזור הבוקר.'}</p></div>${footer()}`;bindFooter();bindQuick();return}
   const C=[];
   const blocks=list.map(c=>{const k=c.group_comments;const pi=C.push(k.chrome_prompt||'')-1;
     const groups=(k.groups||[]).length?`<details class="panel"><summary>הקבוצות (${k.groups.length})</summary><ul class="grow">${k.groups.map(x=>`<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.name||x.url)}</a></li>`).join('')}</ul></details>`:'';
@@ -536,9 +536,70 @@ function renderGroups(){
     return `<h2 class="comm-h">${esc(c.community_he)}</h2>
       ${k.chrome_prompt?`<button class="copy" data-c="${pi}" style="background:var(--blue);color:var(--blue-ink)">העתקה ל-Claude בכרום</button>`:''}
       ${groups}${bank}`}).join('');
-  app.innerHTML=head+blocks+footer();bindFooter();
+  app.innerHTML=head+blocks+footer();bindFooter();bindQuick();
   app.querySelectorAll('[data-c]').forEach(b=>b.onclick=async()=>{const p=navigator.clipboard.writeText(C[+b.dataset.c]);if(b.dataset.open){window.open(b.dataset.open,'_blank','noopener');p.then(()=>toast('התגובה הועתקה. בפוסט: לחצי בתיבת התגובה, הדביקי ושלחי.')).catch(()=>toast('לא הצלחתי להעתיק. חזרי לכאן ולחצי "העתקה בלבד".'));return}try{await p;toast(b.textContent.includes('כרום')?'הועתק. הדביקי בחלונית של Claude בכרום.':'הועתק. הדביקי בתגובה בקבוצה.')}catch(e){toast('לא הצלחתי להעתיק. סמני את הטקסט והעתיקי ידנית.')}});
 }
+// ---------- Quick reply: paste a post you're looking at, Yonatan writes a reply for exactly it ----------
+const COMMS=[['','אוטומטי'],['france','צרפת'],['uk','בריטניה'],['usa_mo','ארה"ב'],['ru','רוסית'],['latam','לטינית']];
+S.qc=store.get('mol_qc')||'';S.quick=null;
+function quickPanel(){
+  const q=S.quick;
+  const res=!q?'':q.wait?`<p class="sub" style="margin-top:10px">יונתן כותב תגובה… (בערך דקה)</p>`
+    :q.ok?`<div class="label">התגובה של יונתן</div><div class="read" dir="auto" style="font-size:20px">${esc(q.translation||q.text)}</div>
+      ${q.translation?`<details><summary>הטקסט שיפורסם</summary><div class="orig" dir="auto">${esc(q.text)}</div></details>`:''}
+      ${q.url?`<button class="copy" id="qopen" style="background:var(--field);color:#fff;width:100%;padding:13px;margin-top:10px">העתקה ופתיחת הפוסט</button>`:''}
+      <button class="copy" id="qcopy">העתקה בלבד</button>`
+    :`<p class="err" style="margin-top:10px">${esc(q.why||'לא נכתבה תגובה')}</p>`;
+  return `<div class="panel" id="qp"><h3>תגובה לפוסט שאת רואה עכשיו</h3>
+  <p class="note">בפייסבוק (גם בקבוצה), אינסטגרם או X: העתיקי את הקישור לפוסט (⋯ ← "העתקת קישור") ואת הטקסט שלו (לחיצה ארוכה ← העתקה), והדביקי כאן. יונתן כותב תגובה בדיוק לפוסט הזה.</p>
+  <textarea id="qtxt" rows="5" dir="auto" style="width:100%;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--sheet);font:inherit" placeholder="קישור לפוסט + הטקסט שלו">${esc(S.qdraft||'')}</textarea>
+  <button class="linkbtn" id="qpaste" type="button">הדבקה מהלוח</button>
+  <div class="seg">${COMMS.map(([k,l])=>`<button data-qc="${k}" aria-pressed="${S.qc===k}">${l}</button>`).join('')}</div>
+  <button class="send" id="qgo" style="width:100%;margin-top:12px" ${q&&q.wait?'disabled':''}>יונתן, כתוב תגובה</button>${res}</div>`;
+}
+function bindQuick(){
+  if(!$('#qp'))return;
+  $('#qtxt').oninput=e=>{S.qdraft=e.target.value};
+  $('#qpaste').onclick=async()=>{try{const t=(await navigator.clipboard.readText()).trim();const a=$('#qtxt');a.value=(a.value?a.value+'\n':'')+t;S.qdraft=a.value}catch(e){$('#qtxt').focus()}};
+  document.querySelectorAll('[data-qc]').forEach(b=>b.onclick=()=>{S.qc=b.dataset.qc;store.set('mol_qc',S.qc);render()});
+  $('#qgo').onclick=quickGo;
+  const q=S.quick;
+  if(q&&q.ok){
+    if($('#qopen'))$('#qopen').onclick=()=>copyOpen({text:q.text,target:q.url});
+    $('#qcopy').onclick=()=>navigator.clipboard.writeText(q.text).then(()=>toast('הועתק.')).catch(()=>toast('לא הצלחתי להעתיק.'));
+  }
+}
+async function quickGo(){
+  const raw=($('#qtxt').value||'').trim();
+  if(!raw){$('#qtxt').focus();toast('הדביקי קישור או טקסט של הפוסט');return}
+  if(!S.issue){toast('אין רשימת אישורים פתוחה. נסי שוב אחרי מחזור הבוקר.');return}
+  const url=(raw.match(/https?:\/\/\S+/)||[''])[0];
+  const post=raw.replace(url,'').trim();
+  const req=Math.random().toString(36).slice(2,9);
+  const since=new Date(Date.now()-60000).toISOString();
+  S.quick={wait:true,req};render();
+  try{
+    await gh(`/repos/${S.repo}/issues/${S.issue.number}/comments`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({body:`/reply\nreq: ${req}\ncommunity: ${S.qc}\nurl: ${url}\npost:\n${post}`})});
+  }catch(e){S.quick={ok:false,why:e.message};render();return}
+  const t0=Date.now();
+  while(Date.now()-t0<6*60000){
+    await new Promise(r=>setTimeout(r,8000));
+    if(!S.quick||S.quick.req!==req)return;
+    try{
+      const r=await gh(`/repos/${S.repo}/issues/${S.issue.number}/comments?since=${encodeURIComponent(since)}&per_page=100`);
+      for(const c of await r.json()){
+        const m=(c.body||'').match(/<!-- quick-reply (\{[\s\S]*?\}) -->/);if(!m)continue;
+        let d;try{d=JSON.parse(m[1])}catch(e){continue}
+        if(d.req!==req)continue;
+        S.quick=d;if(d.ok)S.qdraft='';render();
+        if(d.ok)toast('התגובה מוכנה');return;
+      }
+    }catch(e){}
+  }
+  S.quick={ok:false,why:'לא התקבלה תגובה תוך 6 דקות. ייתכן שריצה אחרת עדיין פועלת – נסי שוב.'};render();
+}
+
 // ---------- Replies tab (v8): 50+ replies a day, one tap to copy and open the post ----------
 const RTYPES=['discussion','gcomment'];
 const REPLY_GOAL=50;
@@ -562,10 +623,10 @@ function renderReplies(){
   const handled=all.filter(i=>i.checked||done.has(i.id)||S.picked.has(i.id)).length;
   const open=all.filter(i=>!done.has(i.id)&&!S.skipped.has(i.id)).sort((a,b)=>(a.checked-b.checked)||(isX(a)-isX(b)));
   const pct=Math.min(100,Math.round(100*handled/REPLY_GOAL));
-  const head=`<header><h1>תגובות</h1><span class="sub">${all.length} מוכנות היום</span></header>
+  const head=`<header><h1>תגובות</h1><span class="sub">${all.length} מוכנות היום</span></header>${quickPanel()}
   <div class="panel"><h3>${handled} מתוך ${REPLY_GOAL} היום</h3><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
   <p class="note" style="margin-top:8px"><b>פייסבוק, אינסטגרם וקבוצות:</b> "העתקה ופתיחת הפוסט" ← בפוסט לחצי בתיבת התגובה ← הדביקי ← שלחי ← חזרי ולחצי "פרסמתי".<br><b>X:</b> לחצי "אשרי" – התגובה יוצאת לבד.<br>בסוף לחצי "שלחי ליונתן" למטה, כדי שהכול יירשם.</p></div>`;
-  if(!open.length){app.innerHTML=head+`<div class="done"><h2>עברת על כל התגובות</h2><p class="sub">${S.picked.size?'לחצי "שלחי ליונתן" למטה.':'תגובות חדשות יגיעו מחר בבוקר.'}</p></div>${footer()}`;bindFooter();return}
+  if(!open.length){app.innerHTML=head+`<div class="done"><h2>עברת על כל התגובות</h2><p class="sub">${S.picked.size?'לחצי "שלחי ליונתן" למטה.':'תגובות חדשות יגיעו מחר בבוקר.'}</p></div>${footer()}`;bindFooter();bindQuick();return}
   app.innerHTML=head+open.map(it=>{const on=S.picked.has(it.id)||it.checked;const x=isX(it);
     return `<article class="card" style="margin-top:12px" data-id="${it.id}">
     <div class="meta"><span>${where(it)}</span>${it.checked?'<span class="when">✓ אושר</span>':''}</div>
@@ -578,7 +639,7 @@ function renderReplies(){
     <div class="actions"><button class="btn skip" data-skip="${it.id}">דלגי</button><button class="btn ok" data-done="${it.id}">פרסמתי ✓</button></div>
     <button class="linkbtn" data-copy="${it.id}" style="margin-top:8px">העתקה בלבד</button>`}
     </article>`}).join('')+footer();
-  bindFooter();
+  bindFooter();bindQuick();
   const byId=id=>S.items.find(i=>i.id===id);
   app.querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>{const it=byId(b.dataset.co);copyOpen(it);if(!it.checked)S.picked.add(it.id);updateBar()});
   app.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(byId(b.dataset.copy).text||'').then(()=>toast('הועתק.')).catch(()=>toast('לא הצלחתי להעתיק.'))});
