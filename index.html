@@ -532,7 +532,7 @@ function renderGroups(){
       ${!b.post_url&&b.search?`<div class="why" style="margin-top:6px"><a href="${esc(FBRECENT(b.search))}" target="_blank" rel="noopener">חיפוש פוסטים דומים בפייסבוק</a> (${esc(b.search)})</div>`:''}</div>`};
     const linked=(k.bank||[]).filter(b=>b.post_url),general=(k.bank||[]).filter(b=>!b.post_url);
     const bank=(linked.length?`<p class="sub" style="margin:14px 0 0"><b>תגובות לפוסטים אמיתיים בקבוצות (${linked.length})</b> – הכפתור פותח בדיוק את הפוסט</p>${linked.map(card).join('')}`:'')
-      +(general.length?`<details class="panel"><summary>תגובות כלליות לפי מצב, בלי פוסט מסוים (${general.length})</summary>${general.map(card).join('')}</details>`:'');
+      +(general.length?`<details class="panel" ${linked.length?"":"open"}><summary>תגובות כלליות לפי מצב, בלי פוסט מסוים (${general.length})</summary>${general.map(card).join('')}</details>`:'');
     return `<h2 class="comm-h">${esc(c.community_he)}</h2>
       ${k.chrome_prompt?`<button class="copy" data-c="${pi}" style="background:var(--blue);color:var(--blue-ink)">העתקה ל-Claude בכרום</button>`:''}
       ${groups}${bank}`}).join('');
