@@ -508,6 +508,7 @@ function goApprove(id){
   S.pos=i;render();window.scrollTo(0,0);
 }
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-copyopen]');if(!a)return;const it=S.items.find(i=>i.id===a.dataset.copyopen);if(it)navigator.clipboard.writeText(it.text).then(()=>toast('התגובה הועתקה. בפוסט: לחצי בתיבת התגובה, הדביקי ושלחי.')).catch(()=>{})});
+const NEWEST=u=>String(u).replace(/\/+$/,'')+'/?sorting_setting=CHRONOLOGICAL';
 const FBRECENT=q=>'https://www.facebook.com/search/posts/?q='+encodeURIComponent(q)+'&filters=eyJyZWNlbnRfcG9zdHM6MCI6IntcIm5hbWVcIjpcInJlY2VudF9wb3N0c1wiLFwiYXJnc1wiOlwiXCJ9In0%3D';
 function renderGroups(){
   $('#bar').hidden=true;const app=$('#app');const g=S.today;
@@ -526,7 +527,8 @@ function renderGroups(){
     const card=b=>{const i=C.push(b.text)-1;return `<div class="topic"><div class="t-h"><span class="t-name" style="font-size:16px">${esc(b.situation||'תגובה')}</span>${b.topic?`<span class="t-exp">${esc(b.topic)}</span>`:''}</div>
       ${b.translation?`<p style="font-family:var(--read);font-size:19px">${esc(b.translation)}</p>`:''}
       <details style="margin-top:6px"><summary>הטקסט לפרסום</summary><div class="orig" dir="auto">${esc(b.text)}</div></details>
-      ${b.post_url?`<button class="copy" data-c="${i}" data-open="${esc(b.post_url)}" style="background:var(--field);color:#fff">העתקה ופתיחת הפוסט</button> `:''}<button class="copy" data-c="${i}">העתקה בלבד</button>
+      ${b.post_url?`<button class="copy" data-c="${i}" data-open="${esc(b.post_url)}" style="background:var(--field);color:#fff">העתקה ופתיחת הפוסט</button> `
+        :(k.groups||[]).map(g=>`<button class="copy" data-c="${i}" data-open="${esc(NEWEST(g.url))}" style="background:var(--field);color:#fff">העתקה ופתיחת ${esc(g.name||'הקבוצה')}</button> `).slice(0,3).join('')}<button class="copy" data-c="${i}">העתקה בלבד</button>
       ${!b.post_url&&b.search?`<div class="why" style="margin-top:6px"><a href="${esc(FBRECENT(b.search))}" target="_blank" rel="noopener">חיפוש פוסטים דומים בפייסבוק</a> (${esc(b.search)})</div>`:''}</div>`};
     const linked=(k.bank||[]).filter(b=>b.post_url),general=(k.bank||[]).filter(b=>!b.post_url);
     const bank=(linked.length?`<p class="sub" style="margin:14px 0 0"><b>תגובות לפוסטים אמיתיים בקבוצות (${linked.length})</b> – הכפתור פותח בדיוק את הפוסט</p>${linked.map(card).join('')}`:'')
